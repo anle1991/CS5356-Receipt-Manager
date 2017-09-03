@@ -1,6 +1,5 @@
 package dao;
 
-import api.ReceiptResponse;
 import generated.tables.records.ReceiptsRecord;
 import org.jooq.Configuration;
 import org.jooq.DSLContext;
@@ -33,5 +32,9 @@ public class ReceiptDao {
 
     public List<ReceiptsRecord> getAllReceipts() {
         return dsl.selectFrom(RECEIPTS).fetch();
+    }
+
+    public List<ReceiptsRecord> getAllReceiptsWith(Integer receiptID) {
+        return dsl.selectFrom(RECEIPTS).where(RECEIPTS.ID.eq(receiptID)).fetch();
     }
 }
