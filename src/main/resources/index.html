@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <!-- Compiled and minified CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/css/materialize.min.css">
+  <!--Import Google Icon Font-->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <!--Let browser know website is optimized for mobile-->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <title>Receipt</title>
+
+  <style>
+    body {
+      display: flex;
+      min-height: 100vh;
+      flex-direction: column;
+    }
+
+    main {
+      flex: 1 0 auto;
+    }
+  </style>
+</head>
+<body>
+
+<main>
+  <div class="section no-pad-bot" id="index-banner">
+    <div class="container">
+      <br><br>
+      <h1 class="header center orange-text" id="main_title">The Receipt</h1>
+      <div class="row center">
+        <h5 class="header col s12 light" id="detail_title">Simple Receipt Management</h5>
+      </div>
+
+      <div class="row right">
+        <a class="btn-floating btn-large waves-effect waves-light red modal-trigger" href="#modal-add-receipt"><i class="material-icons" id="add-receipt">add</i></a>
+      </div>
+
+      <div class="row center" id="receiptList">
+        <table>
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Merchant</th>
+              <th>Item Price</th>
+              <th>Tags</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr>
+              <td>1:00</td>
+              <td>MB 250</td>
+              <td>42,000</td>
+              <td>Luxury</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <br><br>
+
+      <!-- Modal Structure -->
+      <div id="modal-add-receipt" class="modal">
+        <div class="modal-content">
+          <h4>New Receipt</h4>
+          <div class="row">
+            <form class="col s12" id="save-receipt-form">
+              <div class="row">
+                <div class="input-field col s6">
+                  <input name="merchant" id="merchant" type="text" class="validate" required>
+                  <label for="merchant">Merchant</label>
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="input-field col s6">
+                  <input name="amount" id="amount" type="text" class="validate">
+                  <label for="amount">Amount</label>
+                </div>
+              </div>
+
+            </form>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <a href="#!" class="modal-action modal-close waves-effect waves-green btn-flat" id="cancel-receipt">Cancel</a>
+          <a href="#!" class="modal-action waves-effect waves-green btn-flat" id="save-receipt">Add</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+
+<footer class="page-footer orange">
+  <div class="footer-copyright">
+    <div class="container">
+      An Le <a class="orange-text text-lighten-3" href="#">aql6</a>
+    </div>
+  </div>
+</footer>
+
+
+<!-- Compiled and minified JavaScript -->
+<script src="https://code.jquery.com/jquery-3.2.1.js" integrity="sha256-DZAnKJ/6XZ9si04Hgrsxu/8s717jcIzLy3oi35EouyE=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/js/materialize.min.js"></script>
+<script>
+    const api = "http://34.212.113.32:8080";
+    //"http://34.212.113.32:8080";
+    function puttag(id, i) {
+      var input_html = '<td><input name="tag-name" id="tag-name" class="tag_input" type="text" class="validate" required></td>';
+      var add_tag_button = $('.add-tag')[i];
+      add_tag_button.parentElement.setAttribute("disabled", true);
+
+      var this_td = add_tag_button.parentElement.parentElement;
+      $(input_html).insertAfter(this_td);
+      var next_td =  this_td.nextSibling;
+
+      $(".tag_input", next_td).keypress(function(e){
+          if(e.which === 13){
+              var tag = $(this).val();
+              if(tag.length == 0) return;
+              updateTag(id, tag);
+              add_tag_button.parentElement.removeAttribute("disabled");
+          }
+      });
+    }
+
+    function updateTag(id, tag) {
+        $.ajax({
+            beforeSend: function(xhrObj){
+                xhrObj.setRequestHeader("Content-Type","application/json");
+                xhrObj.setRequestHeader("Accept","application/json");
+            },
+            type: "PUT",
+            url: api + '/tags/' + tag.trim(),
+            data: JSON.stringify(id),
+            success: function(){
+                getReceipts();
+            },
+            error: function(e){
+                Materialize.toast(e.responseText, 10000);
+            }
+        });
+    }
+    
+    function getReceipts(){
+        $.getJSON( api+"/tags/receipts", function( data ) {
+            var content = "<thead><tr><th>Time</th><th>Merchant</th><th>Item Price</th><th>Tags</th><th></th><th></th></tr></thead>";
+            content += "<tbody>";
+
+            for(var i = 0; i < data.length; i++){
+                var receipt = data[i];
+                var tags = parseTag(receipt.tag);
+
+                content += '<div class="receipt">';
+                content += '<tr class="receipt"><td>'+receipt.created+'</td>'
+                    +"<td class='merchant'>"+receipt.merchantName+"</td>"
+                    +"<td class='amount'>"+receipt.value+"</td>";
+
+
+                content += "<td class='tags'>";
+                if(tags != null && tags.length > 0){
+                    tags.forEach(function(tag){
+                        if(tag){
+                            tag = tag.trim();
+                            content += '<div class="chip tagValue" onclick="updateTag('+receipt.id +',\''+tag+'\')">';
+                            content += tag;
+                            content += '<i class="close material-icons" >close</i></div>';
+                        }
+                    });
+                }
+
+                content += "</td>";
+                // content += '<td><a class="btn-floating disabled"><i class="material-icons">remove</i></a></td>';
+                content += '<td><a class="btn-floating"><i class="material-icons add-tag left" onclick="puttag('+ receipt.id +','+i+')">add</i></a></td>';
+                content += "</tr>";
+                content += '</div>';
+            }
+
+
+            content += "</tbody>";
+            $("table").html(content);
+        });
+    }
+
+    getReceipts();
+
+    function parseTag(tagContent){
+        var tagString = tagContent.slice(1, tagContent.length-1);
+        return tagString.split(",");
+    }
+
+    $(document).ready(function(){
+        // the "href" attribute of the modal trigger must specify the modal ID that wants to be triggered
+        $('.modal').modal();
+    });
+
+    $('#cancel-receipt').click(function(){
+        $('#merchant').val('');
+        $('#amount').val('');
+    });
+
+    $('#save-receipt').click(function(){
+        if($('#merchant').val().length > 0 && ($('#amount').val().length == 0 || $.isNumeric($('#amount').val()))){
+            var JSONString = JSON.stringify({"merchant":'"'+$('#merchant').val()+'"',"amount":parseInt($('#amount').val())});
+
+            $.ajax({
+                 beforeSend: function(xhrObj){
+                   xhrObj.setRequestHeader("Content-Type","application/json");
+                   xhrObj.setRequestHeader("Accept","application/json");
+                 },
+                type: "POST",
+                url: api + '/receipts',
+                data: JSONString,
+                success: function(){
+                    getReceipts();
+                },
+                error: function(e){
+                    Materialize.toast(e.responseText, 10000);
+                }
+            });
+
+            $('#modal-add-receipt').modal('close');
+        }else{
+            if($('#amount').val().length > 0 && !$.isNumeric($('#amount').val())){
+                Materialize.toast("Amount must be numeric.", 10000);
+            }
+            if($('#merchant').val().length == 0){
+                Materialize.toast("Merchant cannot be empty.", 10000);
+            }
+        }
+
+    });
+
+
+
+</script>
+</body>
+</html>

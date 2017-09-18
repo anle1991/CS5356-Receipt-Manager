@@ -54,6 +54,35 @@ public class TagController {
     }
 
     @GET
+    @Path("/receipts")
+    public List<ReceiptResponse> getReceiptsWithTag() {
+        List<ReceiptsRecord> receiptsRecords = receipts.getAllReceipts();
+        List<ReceiptResponse> response = new ArrayList<>();
+
+        for(ReceiptsRecord receiptsRecord : receiptsRecords){
+            List<TagsRecord> tagsRecords = tags.getAllTagsWithReceiptId(receiptsRecord.getId());
+            List<String> tags = new ArrayList<>();
+            for(TagsRecord tagsRecord : tagsRecords){
+                tags.add(tagsRecord.getTag());
+            }
+
+            ReceiptResponse receiptResponse = new ReceiptResponse(receiptsRecord);
+            receiptResponse.setTag(tags.toString());
+            response.add(receiptResponse);
+        }
+        return response;
+    }
+
+    @GET
+    @Path("/receiptid/{receiptid}")
+    public List<TagResponse> getTag(@PathParam("receiptid") String receiptid) {
+        List<TagsRecord> tagsRecords = tags.getAllTagsWithReceiptId(Integer.parseInt(receiptid));
+        return tagsRecords.stream().map(TagResponse::new).collect(toList());
+    }
+
+
+
+    @GET
     public List<TagResponse> getAllTags(){
         List<TagsRecord> tagsRecords = tags.getAllTags();
         return tagsRecords.stream().map(TagResponse::new).collect(toList());

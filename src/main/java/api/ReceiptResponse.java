@@ -2,6 +2,7 @@ package api;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import generated.tables.records.ReceiptsRecord;
+import generated.tables.records.TagsRecord;
 
 import java.math.BigDecimal;
 import java.sql.Time;
@@ -28,10 +29,29 @@ public class ReceiptResponse {
     @JsonProperty
     Time created;
 
+    @JsonProperty
+    String tag;
+
     public ReceiptResponse(ReceiptsRecord dbRecord) {
         this.merchantName = dbRecord.getMerchant();
         this.value = dbRecord.getAmount();
         this.created = dbRecord.getUploaded();
         this.id = dbRecord.getId();
+    }
+
+    public ReceiptResponse(ReceiptsRecord dbRecord, TagsRecord tagsRecord) {
+        this.merchantName = dbRecord.getMerchant();
+        this.value = dbRecord.getAmount();
+        this.created = dbRecord.getUploaded();
+        this.id = dbRecord.getId();
+        this.tag = tagsRecord.getTag();
+    }
+
+    public String getTag() {
+        return tag;
+    }
+
+    public void setTag(String tag) {
+        this.tag = tag;
     }
 }
