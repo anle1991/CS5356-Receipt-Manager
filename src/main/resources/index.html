@@ -22,19 +22,18 @@
       flex: 1 0 auto;
     }
 
-    video {
-      width: 550px;
-      height: 450px;
-      border: 1px solid black;
+    #camera-display{
+      display: none;
     }
 
-    #vidwrap {
-      margin: 20px 0;
+    .modal{
+      width: 60% !important ; max-height: 100% !important;
     }
 
-    #start, #snapshot {
-      height: 3em;
+    .modal-footer a{
+      margin: 10px 5px !important;
     }
+
   </style>
 </head>
 
@@ -76,16 +75,8 @@
 
       <br><br>
 
-      <!--Video-->
-      <button id="start">Start Video</button>
-      <button id="snapshot" disabled="true">Take a Snapshot!</button>
-      <br>
-      <div id="vidwrap">
-        <video autoplay></video>
-      </div>
-
       <!-- Modal Structure -->
-      <div id="modal-add-receipt" class="modal">
+      <div id="modal-add-receipt" class="modal center">
         <div class="modal-content">
           <h4>New Receipt</h4>
           <div class="row">
@@ -106,10 +97,31 @@
 
             </form>
           </div>
+
+          <!--Camera Display-->
+          <div id="camera-display" class="row center">
+            <video autoplay class="col s12 center"></video>
+          </div>
+
+          <div class="preloader-wrapper big active row" id="wait">
+            <div class="spinner-layer spinner-blue-only">
+              <div class="circle-clipper left">
+                <div class="circle"></div>
+              </div><div class="gap-patch">
+              <div class="circle"></div>
+            </div><div class="circle-clipper right">
+              <div class="circle"></div>
+            </div>
+            </div>
+          </div>
         </div>
+
         <div class="modal-footer">
-          <a href="#!" class="modal-action modal-close waves-effect waves-green btn-flat" id="cancel-receipt">Cancel</a>
-          <a href="#!" class="modal-action waves-effect waves-green btn-flat" id="save-receipt">Add</a>
+          <a href="#!" class="modal-action modal-close waves-effect waves-green btn left" id="cancel-receipt">Cancel</a>
+          <a href="#!" class="modal-action waves-effect waves-green btn pulse" id="start-camera"><i class="material-icons">add_a_photo</i></a>
+          <a href="#!" class="modal-action waves-effect waves-green btn" id="save-receipt">Add</a>
+
+          <a href="#!" class="modal-action waves-effect waves-green btn center" id="take-pic"><i class="material-icons">camera</i></a>
         </div>
       </div>
 
@@ -131,8 +143,127 @@
 <script src="https://code.jquery.com/jquery-3.2.1.js" integrity="sha256-DZAnKJ/6XZ9si04Hgrsxu/8s717jcIzLy3oi35EouyE=" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/js/materialize.min.js"></script>
 <script>
-    const api = "http://localhost:8080";
+    const api = "";
     //"http://34.212.113.32:8080";
+
+    <!--Camera Controller-->
+    $('#start-camera').click(function(){
+        $('#save-receipt-form').hide();
+        $('#camera-display').show();
+        startVideo();
+        $(this).hide();
+        $('#save-receipt').hide();
+        $('#take-pic').show();
+    });
+
+    let imageCapture;
+    let track;
+
+    function attachMediaStream(mediaStream) {
+        $('video')[0].srcObject = mediaStream;
+
+        // Saving the track allows us to capture a photo
+        track = mediaStream.getVideoTracks()[0];
+        imageCapture = new ImageCapture(track);
+    }
+
+    function startVideo() {
+        navigator.mediaDevices.getUserMedia({video: {facingMode: {exact: "environment"}}})
+            .then(attachMediaStream)
+            .catch(error => {
+            navigator.mediaDevices.getUserMedia({video: true})
+            .then(attachMediaStream)
+            .catch(error => {
+            console.log('Not able to get Camera permission.');
+    })
+    })
+    }
+
+    function takeSnapshot() {
+        $('#camera-display').hide();
+        $('#take-pic').hide();
+        $('#wait').show();
+
+        // create a CANVAS element that is same size as the image
+        imageCapture.grabFrame()
+            .then(img => {
+            const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+
+        canvas.getContext('2d').drawImage(img, 0, 0);
+        const base64EncodedImageData = canvas.toDataURL('image/png').split(',')[1];
+        $.ajax({
+            url: api + "/images",
+            type: "POST",
+            data: base64EncodedImageData,
+            contentType: "text/plain",
+            success: function(response, textStatus , xhr) {
+            },
+            error: function(e){
+                Materialize.toast(e.responseText, 10000);
+            }
+        }).then(response => {
+            console.log(JSON.stringify(response));
+            Materialize.toast("Scan completed!", 5000, 'rounded');
+
+            $('#wait').hide();
+            $('#merchant').click();
+            $('#merchant').val(response.merchantName);
+            $('#amount').click();
+            $('#amount').val(response.amount);
+
+            Materialize.updateTextFields();
+
+        }).always(() => {
+            console.log('Request complete!');
+            $('#save-receipt-form').show();
+            $('#save-receipt').show();
+//            $('#start-camera').show();
+        });
+
+        // For debugging, you can uncomment this to see the frame that was captured
+        // $('BODY').append(canvas);
+    });
+
+    }
+
+
+    $(function () {
+        $('video').on('play', () => $('#take-pic').prop('disabled', false));
+        $('#take-pic').on('click', takeSnapshot);
+    });
+    <!--End Camera Controller-->
+
+
+
+    $(document).ready(function(){
+        // the "href" attribute of the modal trigger must specify the modal ID that wants to be triggered
+        $('.modal').modal({
+                dismissible: true, // Modal can be dismissed by clicking outside of the modal
+                opacity: .5, // Opacity of modal background
+                inDuration: 300, // Transition in duration
+                outDuration: 200, // Transition out duration
+                startingTop: '4%', // Starting top style attribute
+                endingTop: '10%', // Ending top style attribute
+                ready: function(modal, trigger) { // Callback for Modal open. Modal and trigger parameters available.
+                    $('#save-receipt-form').show();
+                    $('#camera-display').hide();
+                    $('#take-pic').hide();
+                    $('#start-camera').show();
+                    $('#save-receipt').show();
+                    $('#wait').hide();
+                },
+                complete: function() {
+                    $('#merchant').val('');
+                    $('#amount').val('');
+                    $('#wait').hide();
+                    if(track) track.stop(); // Stop camera when user leave
+                } // Callback for Modal close
+            }
+        );
+    });
+
     function puttag(id, i) {
       var input_html = '<td><input name="tag-name" id="tag-name" class="tag_input" type="text" class="validate" required></td>';
       var add_tag_button = $('.add-tag')[i];
@@ -218,11 +349,6 @@
         return tagString.split(",");
     }
 
-    $(document).ready(function(){
-        // the "href" attribute of the modal trigger must specify the modal ID that wants to be triggered
-        $('.modal').modal();
-    });
-
     $('#cancel-receipt').click(function(){
         $('#merchant').val('');
         $('#amount').val('');
@@ -230,7 +356,7 @@
 
     $('#save-receipt').click(function(){
         if($('#merchant').val().length > 0 && ($('#amount').val().length == 0 || $.isNumeric($('#amount').val()))){
-            var JSONString = JSON.stringify({"merchant":'"'+$('#merchant').val()+'"',"amount":parseInt($('#amount').val())});
+            var JSONString = JSON.stringify({"merchant":$('#merchant').val(),"amount":parseFloat($('#amount').val())});
 
             $.ajax({
                  beforeSend: function(xhrObj){
@@ -258,64 +384,6 @@
             }
         }
 
-    });
-
-    let imageCapture;
-    let track;
-
-    function attachMediaStream(mediaStream) {
-        $('video')[0].srcObject = mediaStream;
-
-        // Saving the track allows us to capture a photo
-        track = mediaStream.getVideoTracks()[0];
-        imageCapture = new ImageCapture(track);
-    }
-
-    function startVideo() {
-        navigator.mediaDevices.getUserMedia({video: {facingMode: {exact: "environment"}}})
-            .then(attachMediaStream)
-            .catch(error => {
-            navigator.mediaDevices.getUserMedia({video: true})
-            .then(attachMediaStream)
-            .catch(error => {
-            console.log('you are fooked');
-    })
-    })
-    }
-
-    function takeSnapshot() {
-        // create a CANVAS element that is same size as the image
-        imageCapture.grabFrame()
-            .then(img => {
-            const canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = img.height;
-
-        canvas.getContext('2d').drawImage(img, 0, 0);
-        const base64EncodedImageData = canvas.toDataURL('image/png').split(',')[1];
-        $.ajax({
-            url: "/images",
-            type: "POST",
-            data: base64EncodedImageData,
-            contentType: "text/plain",
-            success: function() {},
-        })
-            .then(response => {
-            $('video').after(`<div>got response: <pre>${JSON.stringify(response)}</pre></div>`);
-    })
-    .always(() => console.log('request complete'));
-
-        // For debugging, you can uncomment this to see the frame that was captured
-        // $('BODY').append(canvas);
-    });
-
-    }
-
-
-    $(function () {
-        $('#start').on('click', startVideo);
-        $('video').on('play', () => $('#snapshot').prop('disabled', false));
-        $('#snapshot').on('click', takeSnapshot);
     });
 
 </script>

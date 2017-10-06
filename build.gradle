@@ -33,6 +33,10 @@ run {
     args "server", "appconfig.yml"
 }
 
+//applicationDefaultJvmArgs = ["-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005" ]
+
+
+
 // You should really specify which version of Java we are building for - otherwise
 // you'll be subject to defaults in your environment, which can have unexpected values
 sourceCompatibility = 1.8
