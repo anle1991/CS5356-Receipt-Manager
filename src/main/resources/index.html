@@ -146,6 +146,10 @@
     const api = "";
     //"http://34.212.113.32:8080";
 
+    function encodeHTML(s) {
+        return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+    }
+
     <!--Camera Controller-->
     $('#start-camera').click(function(){
         $('#save-receipt-form').hide();
@@ -278,6 +282,7 @@
           if(e.which === 13){
               var tag = $(this).val();
               if(tag.length == 0) return;
+              tag = encodeHTML(tag);
               updateTag(id, tag);
               add_tag_button.parentElement.removeAttribute("disabled");
           }
@@ -356,7 +361,7 @@
 
     $('#save-receipt').click(function(){
         if($('#merchant').val().length > 0 && ($('#amount').val().length == 0 || $.isNumeric($('#amount').val()))){
-            var JSONString = JSON.stringify({"merchant":$('#merchant').val(),"amount":parseFloat($('#amount').val())});
+            var JSONString = JSON.stringify({"merchant":encodeHTML($('#merchant').val()),"amount":parseFloat($('#amount').val())});
 
             $.ajax({
                  beforeSend: function(xhrObj){
