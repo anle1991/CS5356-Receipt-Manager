@@ -1,6 +1,6 @@
 
 
-Simple Receipt Managemen:
+Simple Receipt Management:
 =================
 Add receipt with tag.
 Scan receipt with Google Vision OCR.
