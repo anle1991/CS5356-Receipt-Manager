@@ -1,9 +1,11 @@
-[![CircleCI](https://circleci.com/gh/amfleming/skeleton.svg?style=svg)](https://circleci.com/gh/amfleming/skeleton)
 
 
-skeleton
-============
-A super simple foundation for building a scalable RESTful HTTP servers
+Simple Receipt Managemen:
+=================
+Add receipt with tag.
+Scan receipt with Google Vision OCR.
+
+[https://www.anle.ninja/](https://www.anle.ninja/) [![CircleCI](https://circleci.com/gh/anle1991/CS5356-Skeleton.svg?style=svg)](https://circleci.com/gh/anle1991/CS5356-Skeleton)
 
 To build and run with docker:
 1. Run `./gradlew distTar` _this tells gradle to make a .tar file containing the java application code and all dependencies_
